@@ -35,8 +35,6 @@ if (loginInfo.result == 'ERROR') {
 	process.exit(1);
 }
 
-console.log(loginInfo);
-
 let books = await fetch(`https://bce.mondadorieducation.it/app/mondadorieducation/prodotto/listJsonp?idSito=ED&sessionId=${loginInfo.data.sessionId}&action=hubscuola&type=INT&excludedClassiAnagrafiche=RE-93%2C90-93`, {
     "credentials": "include",
     "headers": {
