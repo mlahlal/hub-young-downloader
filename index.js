@@ -10,131 +10,140 @@ import fs from "fs/promises";
 import yargs from "yargs";
 import PromptSync from "prompt-sync";
 
-const username = await input({ message: 'Enter your username' });
-const psw = await password({ message: 'Enter your password', mask: true });
+async function hubyoung (username, psw) {
+	let data;
+	let volumeId;
+	let token;
+	let platform;
+	let title;
 
-let loginInfo = await fetch("https://bce.mondadorieducation.it/app/mondadorieducation/login/hubLoginJsonp", {
-    "credentials": "include",
-    "headers": {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Content-Type": "application/json",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "cross-site"
-    },
-    "referrer": "https://www.hubscuola.it/",
-    "body": `{\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"idSito\\\":\\\"ED\\\",\\\"username\\\":\\\"${username}\\\",\\\"password\\\":\\\"${psw}\\\",\\\"rememberMe\\\":false,\\\"domain\\\":\\\"hubscuola\\\",\\\"gRecaptchaResponse\\\":\\\"\\\",\\\"verifyRecaptcha\\\":false,\\\"addFullProfile\\\":true,\\\"addHubEncryptedUser\\\":true,\\\"refreshLocalData\\\":true,\\\"activatePromos\\\":true}\"}`,
-    "method": "POST",
-    "mode": "cors"
-}).then((response)=>response.json());
+	//const username = await input({ message: 'Enter your username' });
+	//const psw = await password({ message: 'Enter your password', mask: true });
 
-if (loginInfo.result == 'ERROR') {
-	console.error("Le credenziali inserite sono errate");
-	process.exit(1);
-}
+	let loginInfo = await fetch("https://bce.mondadorieducation.it/app/mondadorieducation/login/hubLoginJsonp", {
+		"credentials": "include",
+		"headers": {
+			"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
+			"Accept": "application/json, text/plain, */*",
+			"Accept-Language": "en-US,en;q=0.5",
+			"Content-Type": "application/json",
+			"Sec-Fetch-Dest": "empty",
+			"Sec-Fetch-Mode": "cors",
+			"Sec-Fetch-Site": "cross-site"
+		},
+		"referrer": "https://www.hubscuola.it/",
+		"body": `{\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"idSito\\\":\\\"ED\\\",\\\"username\\\":\\\"${username}\\\",\\\"password\\\":\\\"${psw}\\\",\\\"rememberMe\\\":false,\\\"domain\\\":\\\"hubscuola\\\",\\\"gRecaptchaResponse\\\":\\\"\\\",\\\"verifyRecaptcha\\\":false,\\\"addFullProfile\\\":true,\\\"addHubEncryptedUser\\\":true,\\\"refreshLocalData\\\":true,\\\"activatePromos\\\":true}\"}`,
+		"method": "POST",
+		"mode": "cors"
+	}).then((response)=>response.json());
 
-let books = await fetch(`https://bce.mondadorieducation.it/app/mondadorieducation/prodotto/listJsonp?idSito=ED&sessionId=${loginInfo.data.sessionId}&action=hubscuola&type=INT&excludedClassiAnagrafiche=RE-93%2C90-93`, {
-    "credentials": "include",
-    "headers": {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
-        "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Sec-Fetch-Dest": "script",
-        "Sec-Fetch-Mode": "no-cors",
-        "Sec-Fetch-Site": "cross-site"
-    },
-    "referrer": "https://www.hubscuola.it/",
-    "method": "GET",
-    "mode": "cors"
-}).then((response)=>response.json());
+	if (loginInfo.result == 'ERROR') {
+		console.error("Le credenziali inserite sono errate");
+		process.exit(1);
+	}
 
-let bookList = [];
-
-for (const book of books.data) {
-	let bookInfo = await fetch(`https://bce.mondadorieducation.it/app/mondadorieducation/prodotto/readComponentsJsonp?idSito=ED&sessionId=${loginInfo.data.sessionId}&isbn=${book.info.isbnArticoloSingolo}&tipoArticolo=SET_COMMERCIALE`, {
+	let books = await fetch(`https://bce.mondadorieducation.it/app/mondadorieducation/prodotto/listJsonp?idSito=ED&sessionId=${loginInfo.data.sessionId}&action=hubscuola&type=INT&excludedClassiAnagrafiche=RE-93%2C90-93`, {
 		"credentials": "include",
 		"headers": {
 			"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
 			"Accept": "*/*",
-	        	"Accept-Language": "en-US,en;q=0.5",
-        		"Sec-Fetch-Dest": "script",
-        		"Sec-Fetch-Mode": "no-cors",
-        		"Sec-Fetch-Site": "cross-site"
+			"Accept-Language": "en-US,en;q=0.5",
+			"Sec-Fetch-Dest": "script",
+			"Sec-Fetch-Mode": "no-cors",
+			"Sec-Fetch-Site": "cross-site"
 		},
 		"referrer": "https://www.hubscuola.it/",
 		"method": "GET",
 		"mode": "cors"
 	}).then((response)=>response.json());
 
-	for (const subBook of bookInfo.data) {
-		if (subBook.tipo == "iflip") {
-			let temp = {
-				name: `${subBook.titolo} - ${subBook.info.titoloArticoloSingolo}`,
-				value: `${subBook.isbn}`,
-				description: `${subBook.isbn}`
-			};
-			bookList.push(temp);
+	let bookList = [];
+
+	for (const book of books.data) {
+		let bookInfo = await fetch(`https://bce.mondadorieducation.it/app/mondadorieducation/prodotto/readComponentsJsonp?idSito=ED&sessionId=${loginInfo.data.sessionId}&isbn=${book.info.isbnArticoloSingolo}&tipoArticolo=SET_COMMERCIALE`, {
+			"credentials": "include",
+			"headers": {
+				"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
+				"Accept": "*/*",
+					"Accept-Language": "en-US,en;q=0.5",
+					"Sec-Fetch-Dest": "script",
+					"Sec-Fetch-Mode": "no-cors",
+					"Sec-Fetch-Site": "cross-site"
+			},
+			"referrer": "https://www.hubscuola.it/",
+			"method": "GET",
+			"mode": "cors"
+		}).then((response)=>response.json());
+
+		for (const subBook of bookInfo.data) {
+			if (subBook.tipo == "iflip") {
+				let temp = {
+					name: `${subBook.titolo} - ${subBook.info.titoloArticoloSingolo}`,
+					value: `${subBook.isbn}`,
+					description: `${subBook.isbn}`
+				};
+				bookList.push(temp);
+			}
 		}
 	}
+
+	const answer = await select({
+	  message: 'Choose a book',
+	  choices: bookList,
+	});
+
+	let bookLink = await fetch(`https://ms-api.hubscuola.it/go-young?iss=${answer}&usr=${loginInfo.data.profile.username}`, {
+		"headers": {
+			'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
+				'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+				'Accept-Language': 'en-US,en;q=0.5',
+				'Accept-Encoding': 'gzip, deflate, br',
+				'Connection': 'keep-alive',
+				'Cookie': `minisitesSessionId=${loginInfo.data.sessionId}; hubEncryptedUser=${loginInfo.data.hubEncryptedUser}; bcejwt.loginToken=${loginInfo.data.loginToken};`,
+				'Upgrade-Insecure-Requests': '1',
+				'Sec-Fetch-Dest': 'document',
+				'Sec-Fetch-Mode': 'navigate',
+				'Sec-Fetch-Site': 'none',
+				'Sec-Fetch-User': '?1',
+				'Pragma': 'no-cache',
+				'Cache-Control': 'no-cache',
+				'TE': 'trailers'
+		}
+	}).then((response)=>response.url);
+
+	let body =  `{"userData":{"browser":{"name":"Firefox","version":"125.0","major":"125"},"so":{"name":"Linux","version":"x86_64"},"app":{"name":"HUB Young","type":"young","version":"6.7"},"platform":"web","userAgent":"Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0"},"username":"${loginInfo.data.profile.username}","sessionId":"${loginInfo.data.sessionId}","jwt":"${loginInfo.data.hubEncryptedUser}"}`;
+
+	let tokenSession = await fetch(`https://ms-api.hubscuola.it/user/internalLogin`, {
+		"method": "POST",
+		"headers": {
+			'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
+			'Content-Type': "application/json",
+			'Accept': 'application/json, text/plain, */*',
+			'Accept-Language': 'en-US,en;q=0.5',
+			'Accept-Encoding': 'gzip, deflate, br',
+			'Origin': 'https://young.hubscuola.it/',
+			'Connection': 'keep-alive',
+			'Referer': 'https://young.hubscuola.it/',
+			'Sec-Fetch-Dest': 'empty',
+			'Sec-Fetch-Mode': 'cors',
+			'Sec-Fetch-Site': 'same-site',
+			'Pragma': 'no-cache',
+			'Cache-Control': 'no-cache',
+			'TE': 'trailers',
+			'Cookie': `minisitesSessionId=${loginInfo.data.sessionId}; hubEncryptedUser=${loginInfo.data.hubEncryptedUser}; bcejwt.loginToken=${loginInfo.data.loginToken};`
+		},
+		body: body
+	}).then((response)=>response.json());
+
+	volumeId = bookLink.split("/").pop();
+	token = tokenSession.tokenId;
+	platform = "hubyoung";
+	title = bookList.find(book => book.value == answer).name;
+
+	await download(volumeId, token, platform, title);
 }
 
-const answer = await select({
-  message: 'Choose a book',
-  choices: bookList,
-});
-
-let bookLink = await fetch(`https://ms-api.hubscuola.it/go-young?iss=${answer}&usr=${loginInfo.data.profile.username}`, {
-	"headers": {
-		'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
-    		'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-    		'Accept-Language': 'en-US,en;q=0.5',
-    		'Accept-Encoding': 'gzip, deflate, br',
-    		'Connection': 'keep-alive',
-    		'Cookie': `minisitesSessionId=${loginInfo.data.sessionId}; hubEncryptedUser=${loginInfo.data.hubEncryptedUser}; bcejwt.loginToken=${loginInfo.data.loginToken};`,
-    		'Upgrade-Insecure-Requests': '1',
-    		'Sec-Fetch-Dest': 'document',
-    		'Sec-Fetch-Mode': 'navigate',
-    		'Sec-Fetch-Site': 'none',
-    		'Sec-Fetch-User': '?1',
-    		'Pragma': 'no-cache',
-    		'Cache-Control': 'no-cache',
-    		'TE': 'trailers'
-  	}
-}).then((response)=>response.url);
-
-let body =  `{"userData":{"browser":{"name":"Firefox","version":"125.0","major":"125"},"so":{"name":"Linux","version":"x86_64"},"app":{"name":"HUB Young","type":"young","version":"6.7"},"platform":"web","userAgent":"Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0"},"username":"${loginInfo.data.profile.username}","sessionId":"${loginInfo.data.sessionId}","jwt":"${loginInfo.data.hubEncryptedUser}"}`;
-
-let tokenSession = await fetch(`https://ms-api.hubscuola.it/user/internalLogin`, {
-	"method": "POST",
-	"headers": {
-		'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
-		'Content-Type': "application/json",
-		'Accept': 'application/json, text/plain, */*',
-		'Accept-Language': 'en-US,en;q=0.5',
-		'Accept-Encoding': 'gzip, deflate, br',
-		'Origin': 'https://young.hubscuola.it/',
-		'Connection': 'keep-alive',
-		'Referer': 'https://young.hubscuola.it/',
-		'Sec-Fetch-Dest': 'empty',
-		'Sec-Fetch-Mode': 'cors',
-		'Sec-Fetch-Site': 'same-site',
-		'Pragma': 'no-cache',
-		'Cache-Control': 'no-cache',
-		'TE': 'trailers',
-		'Cookie': `minisitesSessionId=${loginInfo.data.sessionId}; hubEncryptedUser=${loginInfo.data.hubEncryptedUser}; bcejwt.loginToken=${loginInfo.data.loginToken};`
-	},
-	body: body
-}).then((response)=>response.json());
-
-let data;
-let volumeId = bookLink.split("/").pop();
-let token = tokenSession.tokenId;
-let platform = "hubyoung";
-let title = bookList.find(book => book.value == volumeId);
-
-(async () => {
+async function download (volumeId, token, platform, title) {
 	await fsExtra.ensureDir("temp");
 
 	// make sure folder is empty
@@ -209,5 +218,4 @@ let title = bookList.find(book => book.value == volumeId);
     fsExtra.removeSync("temp");
 
     console.log("Book saved");
-
-})();
+}
