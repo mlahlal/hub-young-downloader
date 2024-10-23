@@ -208,3 +208,5 @@ class HubYoung {
 		console.log("Book saved");
 	}
 }
+
+export { HubYoung }
