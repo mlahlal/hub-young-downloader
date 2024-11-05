@@ -29,8 +29,9 @@ class HubYoung {
 		}).then((response)=>response.json());
 
 		if (this.loginInfo.result == 'ERROR') {
-			console.error("Le credenziali inserite sono errate");
-			process.exit(1);
+			// console.error("Le credenziali inserite sono errate");
+			// process.exit(1);
+			throw Error("Le credenziali sono errate");
 		}
 	}
 
