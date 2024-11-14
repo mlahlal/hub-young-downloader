@@ -74,7 +74,7 @@ class HubYoung {
 					let temp = {
 						name: `${subBook.titolo} - ${subBook.info.titoloArticoloSingolo}`,
 						value: `${subBook.isbn}`,
-						description: `${subBook.isbn}`
+						thumbnail: `https://bce.mondadorieducation.it/media_educar/imdeascuola/${subBook.isbnSet}GRA.jpg`
 					};
 					this.bookList.push(temp);
 				}
