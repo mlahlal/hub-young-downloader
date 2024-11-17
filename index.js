@@ -29,8 +29,6 @@ class HubYoung {
 		}).then((response)=>response.json());
 
 		if (this.loginInfo.result == 'ERROR') {
-			// console.error("Le credenziali inserite sono errate");
-			// process.exit(1);
 			throw Error("Le credenziali sono errate");
 		}
 	}
@@ -74,7 +72,7 @@ class HubYoung {
 					let temp = {
 						name: `${subBook.titolo} - ${subBook.info.titoloArticoloSingolo}`,
 						value: `${subBook.isbn}`,
-						thumbnail: `https://bce.mondadorieducation.it/media_educar/imdeascuola/${subBook.isbnSet}GRA.jpg`
+						thumbnail: `https://bce.mondadorieducation.it/media_educar/${subBook.origin == "PIN" ? "img": "imdeascuola"}/${subBook.isbnSet}GRA.jpg`
 					};
 					this.bookList.push(temp);
 				}
