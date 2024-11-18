@@ -72,8 +72,9 @@ class HubYoung {
 					let temp = {
 						name: `${subBook.titolo} - ${subBook.info.titoloArticoloSingolo}`,
 						value: `${subBook.isbn}`,
-						thumbnail: `https://bce.mondadorieducation.it/media_educar/${subBook.origin == "PIN" ? "img": "imdeascuola"}/${subBook.isbnSet}GRA.jpg`
+						thumbnail: `https://bce.mondadorieducation.it/media_educar/${subBook.codiceSito == "ME" ? "img" : "imdeascuola"}/${subBook.isbnSet}GRA.jpg`
 					};
+					
 					this.bookList.push(temp);
 				}
 			}
