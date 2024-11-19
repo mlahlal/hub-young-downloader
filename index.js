@@ -143,31 +143,23 @@ class HubYoung {
 
 		platform = platform === "hubyoung" ? "young" : "kids";
 
-		console.log("Fetching book info...");
-		console.log("Downloading chapter...");
-
 		var res = await fetch(
 			`https://ms-mms.hubscuola.it/downloadPackage/${volumeId}/publication.zip?tokenId=${token}`,
 			{ headers: { "Token-Session": token } }
 		);
 		if (res.status !== 200) {
-			console.error("API error:", res.status);
+			// console.error("API error:", res.status);
 			reject(res.status);
 		}
 
-		console.log("Extracting...");
-
 		const zip = new AdmZip(Buffer.from(await res.arrayBuffer()));
-		await zip.extractAllTo("temp/extracted-files");
-
-		console.log("Reading chapter list...");
+		zip.extractAllTo("temp/extracted-files");
 
 		let db = new sqlite3.Database(
 			"./temp/extracted-files/publication/publication.db",
 			(err) => {
 				if (err) {
-					console.error(err.message);
-					process.exit(1);
+					throw new Error(err.message);
 				}
 			}
 		);
@@ -178,8 +170,6 @@ class HubYoung {
 		});
 		db.close();
 
-		console.log("Downloading pages...")
-
 		for (const chapter of chapters) {
 			const url = `https://ms-mms.hubscuola.it/public/${volumeId}/${chapter.chapterId}.zip?tokenId=${token}&app=v2`;
 			var res = await fetch(url, {
@@ -188,8 +178,6 @@ class HubYoung {
 			const zip = new AdmZip(Buffer.from(res));
 			await zip.extractAllTo(`temp/build`);
 		}
-
-		console.log("Merging pages...");
 
 		const merger = new PDFMerger();
 		for (const chapter of chapters) {
@@ -201,11 +189,10 @@ class HubYoung {
 				}
 			}
 		}
-		merger.save(`${title}.pdf`);
+		
+		await merger.save(`${title}.pdf`);
 
 		fsExtra.removeSync("temp");
-
-		console.log("Book saved");
 	}
 }
 
