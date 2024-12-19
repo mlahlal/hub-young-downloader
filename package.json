@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/MouadLahlal/hub-young-downloader#readme",
   "type": "module",
+  "types": "types.d.ts",
   "dependencies": {
     "adm-zip": "^0.5.12",
     "fs-extra": "^11.2.0",
