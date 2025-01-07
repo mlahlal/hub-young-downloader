@@ -107,3 +107,5 @@ dist
 # Temp files and books
 temp/
 *.pdf
+
+test.js

@@ -4,153 +4,196 @@ import PDFMerger from "pdf-merger-js";
 import fetch from "node-fetch";
 import fsExtra from "fs-extra";
 import fs from "fs/promises";
-import yargs from "yargs";
-import PromptSync from "prompt-sync";
 
-const prompt = PromptSync({ sigint: true });
+class HubYoung {
+	loginInfo;
 
-const argv = yargs(process.argv)
-    .option("platform", {
-        alias: "p",
-        description:
-            'Platform to download from, either "hubyoung" or "hubkids"',
-        type: "string",
-		choices: ["hubyoung", "hubkids"]
-    })
-    .option("volumeId", {
-        alias: "v",
-        description: "Volume ID of the book to download",
-        type: "string",
-    })
-    .option("token", {
-        alias: "t",
-        description: "Token of the user",
-        type: "string",
-    })
-    .option("file", {
-        alias: "f",
-        description: "The output file (defaults to book name)",
-        type: "string",
-    })
-	.option("noCleanUp", {
-		alias: "n",
-		description: "Don't clean up the temp folder after merging",
-		type: "boolean",
-		default: false
-	})
-    .help()
-    .alias("help", "h").argv;
+	constructor(){}
 
+	async login(username, psw) {
+		this.loginInfo = await fetch("https://bce.mondadorieducation.it/app/mondadorieducation/login/hubLoginJsonp", {
+			"credentials": "include",
+			"headers": {
+				"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
+				"Accept": "application/json, text/plain, */*",
+				"Accept-Language": "en-US,en;q=0.5",
+				"Content-Type": "application/json",
+				"Sec-Fetch-Dest": "empty",
+				"Sec-Fetch-Mode": "cors",
+				"Sec-Fetch-Site": "cross-site"
+			},
+			"referrer": "https://www.hubscuola.it/",
+			"body": `{\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"idSito\\\":\\\"ED\\\",\\\"username\\\":\\\"${username}\\\",\\\"password\\\":\\\"${psw}\\\",\\\"rememberMe\\\":false,\\\"domain\\\":\\\"hubscuola\\\",\\\"gRecaptchaResponse\\\":\\\"\\\",\\\"verifyRecaptcha\\\":false,\\\"addFullProfile\\\":true,\\\"addHubEncryptedUser\\\":true,\\\"refreshLocalData\\\":true,\\\"activatePromos\\\":true}\"}`,
+			"method": "POST",
+			"mode": "cors"
+		}).then((response)=>response.json());
 
-
-(async () => {
-	await fsExtra.ensureDir("temp");
-
-	// make sure folder is empty
-	await fs.readdir("temp").then(async files => {
-		for (const file of files) {
-			await fsExtra.remove(`temp/${file}`);
+		if (this.loginInfo.result == 'ERROR') {
+			throw Error("Le credenziali sono errate");
 		}
-	});
-
-    let platform = argv.platform;
-
-    while (!platform) {
-        platform = prompt(
-            "Input the platform (either 'hubyoung' or 'hubkids'): "
-        );
-        if (platform !== "hubyoung" && platform !== "hubkids") {
-            console.log(
-                "Invalid platform, please input either 'hubyoung' or 'hubkids'"
-            );
-            platform = null;
-        }
-    }
-    platform = platform === "hubyoung" ? "young" : "kids";
-
-    let volumeId = argv.volumeId;
-    while (!volumeId) volumeId = prompt("Input the volume ID: ");
-
-    let token = argv.token;
-    while (!token) token = prompt("Input the token: ");
-
-	console.log("Fetching book info...");
-
-	let title;
-
-    let response = await fetch("https://ms-api.hubscuola.it/me" + platform + "/publication/" + volumeId, { method: "GET", headers: { "Token-Session": token, "Content-Type": "application/json" } });
-    const code = response.status;
-    if (code === 500) {
-        console.log("Volume ID not valid");
-    } else if (code === 401) {
-        console.log("Token Session not valid, you may have copied it wrong or you don't own this book.");
-    } else {
-        let result = await response.json();
-        title = result.title;
-        console.log(`Downloading "${title}"...`);
-    }
-
-	console.log("Downloading chapter...");
-
-	var res = await fetch(
-		`https://ms-mms.hubscuola.it/downloadPackage/${volumeId}/publication.zip?tokenId=${token}`,
-		{ headers: { "Token-Session": token } }
-	);
-	if (res.status !== 200) {
-		console.error("API error:", res.status);
-		reject(res.status);
 	}
 
-	console.log("Extracting...");
+	async getBooks() {
+		let books = await fetch(`https://bce.mondadorieducation.it/app/mondadorieducation/prodotto/listJsonp?idSito=ED&sessionId=${this.loginInfo.data.sessionId}&action=hubscuola&type=INT&excludedClassiAnagrafiche=RE-93%2C90-93`, {
+			"credentials": "include",
+			"headers": {
+				"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
+				"Accept": "*/*",
+				"Accept-Language": "en-US,en;q=0.5",
+				"Sec-Fetch-Dest": "script",
+				"Sec-Fetch-Mode": "no-cors",
+				"Sec-Fetch-Site": "cross-site"
+			},
+			"referrer": "https://www.hubscuola.it/",
+			"method": "GET",
+			"mode": "cors"
+		}).then((response)=>response.json());
 
-    const zip = new AdmZip(Buffer.from(await res.arrayBuffer()));
-    await zip.extractAllTo("temp/extracted-files");
+		this.bookList = [];
 
-	console.log("Reading chapter list...");
+		for (const book of books.data) {
+			let bookInfo = await fetch(`https://bce.mondadorieducation.it/app/mondadorieducation/prodotto/readComponentsJsonp?idSito=ED&sessionId=${this.loginInfo.data.sessionId}&isbn=${book.info.isbnArticoloSingolo}&tipoArticolo=SET_COMMERCIALE`, {
+				"credentials": "include",
+				"headers": {
+					"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
+					"Accept": "*/*",
+						"Accept-Language": "en-US,en;q=0.5",
+						"Sec-Fetch-Dest": "script",
+						"Sec-Fetch-Mode": "no-cors",
+						"Sec-Fetch-Site": "cross-site"
+				},
+				"referrer": "https://www.hubscuola.it/",
+				"method": "GET",
+				"mode": "cors"
+			}).then((response)=>response.json());
 
-	let db = new sqlite3.Database(
-		"./temp/extracted-files/publication/publication.db",
-		(err) => {
-			if (err) {
-				console.error(err.message);
-				process.exit(1);
+			for (const subBook of bookInfo.data) {
+				if (subBook.tipo == "iflip") {
+					let temp = {
+						name: `${subBook.titolo} - ${subBook.info.titoloArticoloSingolo}`,
+						value: `${subBook.isbn}`,
+						thumbnail: `https://bce.mondadorieducation.it/media_educar/${subBook.codiceSito == "ME" ? "img" : "imdeascuola"}/${subBook.isbnSet}GRA.jpg`
+					};
+					
+					this.bookList.push(temp);
+				}
 			}
 		}
-	);
-	let chapters = await new Promise((resolve) => {
-		db.get("SELECT offline_value FROM offline_tbl WHERE offline_path=?",[`meyoung/publication/${volumeId}`], (err, row) => {
-			resolve(JSON.parse(row.offline_value).indexContents.chapters);
+
+		return this.bookList;
+	}
+
+	async download(volumeId) {
+		let bookLink = await fetch(`https://ms-api.hubscuola.it/go-young?iss=${volumeId}&usr=${this.loginInfo.data.profile.username}`, {
+			"headers": {
+				'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
+					'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+					'Accept-Language': 'en-US,en;q=0.5',
+					'Accept-Encoding': 'gzip, deflate, br',
+					'Connection': 'keep-alive',
+					'Cookie': `minisitesSessionId=${this.loginInfo.data.sessionId}; hubEncryptedUser=${this.loginInfo.data.hubEncryptedUser}; bcejwt.loginToken=${this.loginInfo.data.loginToken};`,
+					'Upgrade-Insecure-Requests': '1',
+					'Sec-Fetch-Dest': 'document',
+					'Sec-Fetch-Mode': 'navigate',
+					'Sec-Fetch-Site': 'none',
+					'Sec-Fetch-User': '?1',
+					'Pragma': 'no-cache',
+					'Cache-Control': 'no-cache',
+					'TE': 'trailers'
+			}
+		}).then((response)=>response.url);
+
+		let body =  `{"userData":{"browser":{"name":"Firefox","version":"125.0","major":"125"},"so":{"name":"Linux","version":"x86_64"},"app":{"name":"HUB Young","type":"young","version":"6.7"},"platform":"web","userAgent":"Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0"},"username":"${this.loginInfo.data.profile.username}","sessionId":"${this.loginInfo.data.sessionId}","jwt":"${this.loginInfo.data.hubEncryptedUser}"}`;
+
+		let tokenSession = await fetch(`https://ms-api.hubscuola.it/user/internalLogin`, {
+			"method": "POST",
+			"headers": {
+				'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
+				'Content-Type': "application/json",
+				'Accept': 'application/json, text/plain, */*',
+				'Accept-Language': 'en-US,en;q=0.5',
+				'Accept-Encoding': 'gzip, deflate, br',
+				'Origin': 'https://young.hubscuola.it/',
+				'Connection': 'keep-alive',
+				'Referer': 'https://young.hubscuola.it/',
+				'Sec-Fetch-Dest': 'empty',
+				'Sec-Fetch-Mode': 'cors',
+				'Sec-Fetch-Site': 'same-site',
+				'Pragma': 'no-cache',
+				'Cache-Control': 'no-cache',
+				'TE': 'trailers',
+				'Cookie': `minisitesSessionId=${this.loginInfo.data.sessionId}; hubEncryptedUser=${this.loginInfo.data.hubEncryptedUser}; bcejwt.loginToken=${this.loginInfo.data.loginToken};`
+			},
+			body: body
+		}).then((response)=>response.json());
+
+		let title = this.bookList.find(book => book.value == volumeId).name;
+		volumeId = bookLink.split("/").pop();
+		let token = tokenSession.tokenId;
+		let platform = "hubyoung";
+
+		await fsExtra.ensureDir("temp");
+
+		// make sure folder is empty
+		await fs.readdir("temp").then(async files => {
+			for (const file of files) {
+				await fsExtra.remove(`temp/${file}`);
+			}
 		});
-	});
-	db.close();
 
-	console.log("Downloading pages...")
+		platform = platform === "hubyoung" ? "young" : "kids";
 
-	for (const chapter of chapters) {
-        const url = `https://ms-mms.hubscuola.it/public/${volumeId}/${chapter.chapterId}.zip?tokenId=${token}&app=v2`;
-        var res = await fetch(url, {
-            headers: { "Token-Session": token },
-        }).then((res) => res.arrayBuffer());
-        const zip = new AdmZip(Buffer.from(res));
-        await zip.extractAllTo(`temp/build`);
-    }
+		var res = await fetch(
+			`https://ms-mms.hubscuola.it/downloadPackage/${volumeId}/publication.zip?tokenId=${token}`,
+			{ headers: { "Token-Session": token } }
+		);
+		if (res.status !== 200) {
+			// console.error("API error:", res.status);
+			reject(res.status);
+		}
 
-	console.log("Merging pages...");
+		const zip = new AdmZip(Buffer.from(await res.arrayBuffer()));
+		zip.extractAllTo("temp/extracted-files");
 
-	const merger = new PDFMerger();
-    for (const chapter of chapters) {
-        let base = `./temp/build/${chapter.chapterId}`;
-        const files = fsExtra.readdirSync(base);
-        for (const file of files) {
-            if (file.includes(".pdf")) {
-                await merger.add(`${base}/${file}`);
-            }
-        }
-    }
-    merger.save(argv.file || `${title}.pdf`);
+		let db = new sqlite3.Database(
+			"./temp/extracted-files/publication/publication.db",
+			(err) => {
+				if (err) {
+					throw new Error(err.message);
+				}
+			}
+		);
+		let chapters = await new Promise((resolve) => {
+			db.get("SELECT offline_value FROM offline_tbl WHERE offline_path=?",[`meyoung/publication/${volumeId}`], (err, row) => {
+				resolve(JSON.parse(row.offline_value).indexContents.chapters);
+			});
+		});
+		db.close();
 
-    if (!argv.noCleanUp) fsExtra.removeSync("temp");
+		for (const chapter of chapters) {
+			const url = `https://ms-mms.hubscuola.it/public/${volumeId}/${chapter.chapterId}.zip?tokenId=${token}&app=v2`;
+			var res = await fetch(url, {
+				headers: { "Token-Session": token },
+			}).then((res) => res.arrayBuffer());
+			const zip = new AdmZip(Buffer.from(res));
+			await zip.extractAllTo(`temp/build`);
+		}
 
-    console.log("Book saved");
+		const merger = new PDFMerger();
+		for (const chapter of chapters) {
+			let base = `./temp/build/${chapter.chapterId}`;
+			const files = fsExtra.readdirSync(base);
+			for (const file of files) {
+				if (file.includes(".pdf")) {
+					await merger.add(`${base}/${file}`);
+				}
+			}
+		}
+		
+		await merger.save(`${title}.pdf`);
 
-})();
+		fsExtra.removeSync("temp");
+	}
+}
+
+export { HubYoung }

@@ -1,30 +1,32 @@
 {
   "name": "hub-young-downloader",
-  "version": "3.0.0",
-  "description": "A simple tool that allows you to create an ofline backup of your books on HUB Young",
+  "version": "1.0.0",
+  "description": "A package to list and retrieve books from HUB Young",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Leone25/hub-young-downloader.git"
+    "url": "git+https://github.com/mlahlal/hub-young-downloader"
   },
-  "author": "Enrico",
+  "author": {
+    "name": "Mouad Lahlal",
+	"url": "https://github.com/mlahlal"
+  },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Leone25/hub-young-downloader/issues"
+    "url": "https://github.com/mlahlal/hub-young-downloader/issues"
   },
-  "homepage": "https://github.com/Leone25/hub-young-downloader#readme",
+  "homepage": "https://github.com/mlahlal/hub-young-downloader#readme",
   "type": "module",
+  "types": "types.d.ts",
   "dependencies": {
     "adm-zip": "^0.5.12",
     "fs-extra": "^11.2.0",
     "node-fetch": "^3.3.2",
     "pdf-merger-js": "^5.1.1",
-    "prompt-sync": "^4.2.0",
     "sqlite3": "^5.1.7",
-    "sync-request": "^6.1.0",
-    "yargs": "^17.5.1"
+    "sync-request": "^6.1.0"
   }
 }
