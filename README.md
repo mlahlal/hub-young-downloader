@@ -34,4 +34,4 @@ I may or may not update it depending on my needs tho I'm open to pullup requests
 This software uses the MIT License
 
 ## Special Mention
-The foundation of this project was initially developed by [Leone25](github.com/Leone25).
+The foundation of this project was initially developed by [Leone25](https://github.com/Leone25/).
