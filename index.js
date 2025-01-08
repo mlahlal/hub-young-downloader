@@ -83,7 +83,7 @@ class HubYoung {
 		return this.bookList;
 	}
 
-	async download(volumeId) {
+	async download(volumeId, path) {
 		let bookLink = await fetch(`https://ms-api.hubscuola.it/go-young?iss=${volumeId}&usr=${this.loginInfo.data.profile.username}`, {
 			"headers": {
 				'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
@@ -189,8 +189,12 @@ class HubYoung {
 				}
 			}
 		}
+
+		if (path.slice(-1) != "/") {
+			path += "/";
+		}
 		
-		await merger.save(`${title}.pdf`);
+		await merger.save(`${path}${title}.pdf`);
 
 		fsExtra.removeSync("temp");
 	}
