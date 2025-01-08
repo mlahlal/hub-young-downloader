@@ -7,6 +7,7 @@ import fs from "fs/promises";
 
 class HubYoung {
 	loginInfo;
+	path;
 
 	constructor(){}
 
@@ -83,7 +84,15 @@ class HubYoung {
 		return this.bookList;
 	}
 
-	async download(volumeId) {
+	checkPath() {
+		fsExtra.ensureDirSync(this.path);
+
+		if (this.path.slice(-1) != "/") {
+			this.path += "/";
+		}
+	}
+
+	async download(volumeId, path) {
 		let bookLink = await fetch(`https://ms-api.hubscuola.it/go-young?iss=${volumeId}&usr=${this.loginInfo.data.profile.username}`, {
 			"headers": {
 				'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
@@ -189,8 +198,10 @@ class HubYoung {
 				}
 			}
 		}
+
+		checkPath();
 		
-		await merger.save(`${title}.pdf`);
+		await merger.save(`${path}${title}.pdf`);
 
 		fsExtra.removeSync("temp");
 	}
