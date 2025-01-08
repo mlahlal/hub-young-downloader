@@ -4,7 +4,7 @@ A package to list and retrieve books from HUB Young.
 ## Installation
 This package is not published on npm. To install it, use the following command:
 ```
-npm i github:mlahlal/hub-young-downloader#v5
+npm i github:mlahlal/hub-young-downloader
 ```
 
 ## Basic Usage
