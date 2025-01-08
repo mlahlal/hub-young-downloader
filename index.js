@@ -7,6 +7,7 @@ import fs from "fs/promises";
 
 class HubYoung {
 	loginInfo;
+	path;
 
 	constructor(){}
 
@@ -81,6 +82,14 @@ class HubYoung {
 		}
 
 		return this.bookList;
+	}
+
+	checkPath() {
+		fsExtra.ensureDirSync(this.path);
+
+		if (this.path.slice(-1) != "/") {
+			this.path += "/";
+		}
 	}
 
 	async download(volumeId, path) {
@@ -190,9 +199,7 @@ class HubYoung {
 			}
 		}
 
-		if (path.slice(-1) != "/") {
-			path += "/";
-		}
+		checkPath();
 		
 		await merger.save(`${path}${title}.pdf`);
 
