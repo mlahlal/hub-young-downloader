@@ -201,7 +201,7 @@ class HubYoung {
 
 		this.checkPath();
 		
-		await merger.save(`${path}${title}.pdf`);
+		await merger.save(`${this.path}${title}.pdf`);
 
 		fsExtra.removeSync("temp");
 	}
