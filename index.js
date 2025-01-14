@@ -199,6 +199,7 @@ class HubYoung {
 			}
 		}
 
+		this.path = path;
 		this.checkPath();
 		
 		await merger.save(`${this.path}${title}.pdf`);
